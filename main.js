@@ -1,11 +1,12 @@
 import { Maze } from "./src/maze.js";
+import GameState from "./src/gamestate";
 
 const canvas = Screen.getMode();
-const image = new Image("assets/video_game_background.png");
-image.width = canvas.width;
-image.height = canvas.height;
+
 Screen.setVSync(true);
 const maze = new Maze(50, 50);
+
+const gamestate = new GameState(0);
 
 while (true) {
   main_loop();
@@ -13,6 +14,18 @@ while (true) {
 
 function main_loop() {
   Screen.clear();
-  maze.render();
+  const state = gamestate.getState();
+  switch (state) {
+    case 0:
+      //menu
+      break;
+    case 1:
+      maze.render();
+      //playing
+      break;
+    case 2:
+      //game over
+      break;
+  }
   Screen.flip();
 }
