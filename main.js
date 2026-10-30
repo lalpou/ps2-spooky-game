@@ -7,7 +7,7 @@ import { Picture } from "./src/ui/picture.js";
 import { Label } from "./src/ui/label.js";
 import { Composition } from "./src/ui/composition.js";
 import { Grid } from "./src/ui/grid.js";
-import { saveScore } from "./src/scores.js";
+import { loadScores, saveScore } from "./src/scores.js";
 
 const canvas = Screen.getMode();
 
@@ -32,8 +32,8 @@ function playMusic(path) {
 const margin = 20;
 
 const menu = new Menu(0, 0, 10);
-menu.addOption("Play (1P)", () => gamestate.setState(1));
-menu.addOption("Play (2P)");
+menu.addOption("Play", () => gamestate.setState(1));
+menu.addOption("Scoreboard", () => gamestate.setState(4));
 menu.addOption("Exit");
 menu.setPos({
   x: margin,
@@ -90,6 +90,31 @@ nameEntry.setPos({
   x: (canvas.width - nameEntry.size.width) / 2,
   y: (canvas.height - nameEntry.size.height) / 2,
 });
+
+let scoreboard = null;
+
+function buildScoreboard() {
+  const board = new Composition(0, 0, Composition.VERTICAL, 12);
+  board.addItems(new Label("HIGH SCORES", { scale: 2 }));
+
+  const top = loadScores().slice(0, 5);
+  if (top.length === 0)
+    board.addItems(new Label("No scores yet", { color: hintReady }));
+  top.forEach((entry, i) => {
+    const name = (entry.name + "   ").slice(0, 3);
+    const points = ("     " + entry.score).slice(-5);
+    board.addItems(
+      new Label(`${i + 1}. ${name} ${points}`, { color: hintReady }),
+    );
+  });
+
+  board.addItems(new Label("Press O to go back", { color: hintWaiting }));
+  board.setPos({
+    x: (canvas.width - board.size.width) / 2,
+    y: (canvas.height - board.size.height) / 2,
+  });
+  return board;
+}
 
 const gui = new Gui(margin, margin);
 gui.spread(canvas.width - margin * 2);
@@ -151,7 +176,9 @@ function main_loop() {
       break;
     }
     case 4:
-      //scoreboard
+      if (gameStateChanged) scoreboard = buildScoreboard();
+      if (controller.pad.justPressed(Pads.CIRCLE)) gamestate.setState(0);
+      scoreboard.render();
       break;
     case 5:
       //win
