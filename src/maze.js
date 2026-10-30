@@ -8,6 +8,54 @@ export class Maze {
     this.height = height % 2 === 0 ? height + 1 : height;
     /** @type {number[][]} 0 = no wall, 1 = wall */
     this.grid = this.generate();
+    /** @type {{x: number, y: number}} */
+    this.start = this.pickStart();
+    /** @type {{x: number, y: number}} */
+    this.exit = this.farthestFrom(this.start);
+  }
+
+  /** @returns {{x: number, y: number}} random cell, always on odd coords */
+  pickStart() {
+    const cellsX = (this.width - 1) / 2;
+    const cellsY = (this.height - 1) / 2;
+    return {
+      x: 1 + 2 * Math.floor(Math.random() * cellsX),
+      y: 1 + 2 * Math.floor(Math.random() * cellsY),
+    };
+  }
+
+  /**
+   * @param {{x: number, y: number}} from
+   * @returns {{x: number, y: number}} open cell with the longest walking path from `from`
+   */
+  farthestFrom(from) {
+    const dist = Array.from({ length: this.height }, () =>
+      new Array(this.width).fill(-1),
+    );
+    dist[from.y][from.x] = 0;
+    const queue = [[from.x, from.y]];
+    let farthest = from;
+
+    for (let i = 0; i < queue.length; i++) {
+      const [x, y] = queue[i];
+      for (const [dx, dy] of [
+        [0, -1],
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+      ]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (this.grid[ny][nx] === 1 || dist[ny][nx] !== -1) continue;
+        dist[ny][nx] = dist[y][x] + 1;
+        queue.push([nx, ny]);
+        if (dist[ny][nx] > dist[farthest.y][farthest.x]) {
+          farthest = { x: nx, y: ny };
+        }
+      }
+    }
+
+    return farthest;
   }
 
   /** @returns {number[][]} */
