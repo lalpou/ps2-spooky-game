@@ -13,13 +13,15 @@ const world = new World();
 let lastState = null;
 const controller = new Controller(0, 0.1);
 
+const margin = 20;
+
 const menu = new Menu(0, 0, 10);
 menu.addOption("Play (1P)", () => gamestate.setState(1));
 menu.addOption("Play (2P)");
 menu.addOption("Exit");
 menu.setPos({
-  x: 20,
-  y: canvas.height - menu.size.height - 20,
+  x: margin,
+  y: canvas.height - menu.size.height - margin,
 });
 
 const gui = new Gui(margin, margin);
