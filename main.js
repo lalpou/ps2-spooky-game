@@ -5,7 +5,6 @@ import { Label } from "./src/ui/label.js";
 import { Menu } from "./src/ui/menu.js";
 
 const canvas = Screen.getMode();
-const font = new Font("default");
 
 Screen.setVSync(true);
 
@@ -52,13 +51,6 @@ function main_loop() {
     case 1:
       if (gameStateChanged) world.reset();
       world.update(dt, controller);
-      const stick = controller.getLeftStick();
-      font.print(10, 10, `lx ${controller.pad.lx} ly ${controller.pad.ly}`);
-      font.print(
-        10,
-        30,
-        `x ${stick.x.toFixed(2)} y ${stick.y.toFixed(2)} dt ${dt.toFixed(4)}`,
-      );
       world.render();
       //playing
       break;
