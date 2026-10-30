@@ -1,13 +1,16 @@
 import { Maze } from "./src/maze.js";
-import GameState from "./src/gamestate";
-
-const canvas = Screen.getMode();
+import { GameState } from "./src/gamestate.js";
+import { World } from "./src/world.js";
 
 Screen.setVSync(true);
-const maze = new Maze(50, 50);
 
-const gamestate = new GameState(0);
+const gamestate = new GameState(1);
+const world = new World();
+let lastState = null;
 
+function init() {}
+
+init();
 while (true) {
   main_loop();
 }
@@ -15,12 +18,15 @@ while (true) {
 function main_loop() {
   Screen.clear();
   const state = gamestate.getState();
+  const gameStateChanged = state !== lastState;
+  lastState = state;
   switch (state) {
     case 0:
       //menu
       break;
     case 1:
-      maze.render();
+      if (gameStateChanged) world.reset();
+      world.render();
       //playing
       break;
     case 2:

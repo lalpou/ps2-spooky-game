@@ -55,14 +55,20 @@ export class Maze {
     return grid;
   }
 
-  render() {
+  render(camera) {
     const size = 10;
     const wallColor = Color.new(255, 0, 0, 128);
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         if (this.grid[y][x] === 1) {
-          Draw.rect(x * size, y * size, size, size, wallColor);
+          Draw.rect(
+            camera.toScreenX(x * size),
+            camera.toScreenY(y * size),
+            camera.scale,
+            camera.scale,
+            wallColor,
+          );
         }
       }
     }
