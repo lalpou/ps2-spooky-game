@@ -1,38 +1,22 @@
 import { Composition } from "./composition.js";
+import { Label } from "./label.js";
 
 const activeColor = Color.new(255, 255, 255, 128);
 
-export class Menu {
+export class Menu extends Composition {
   constructor(x, y, gap = 10) {
-    this.composition = new Composition(x, y, Composition.VERTICAL, gap);
+    super(x, y, Composition.VERTICAL, gap);
     this.activeIndex = 0;
+    this.actions = new Map();
+  }
+  addOption(text, onSelect = () => {}) {
+    const label = new Label(text);
+    this.addItems(label);
+    this.actions.set(label, onSelect);
+    return label;
   }
 
-  get items() {
-    return this.composition.items;
-  }
-
-  addItems(...items) {
-    this.composition.addItems(...items);
-  }
-
-  setPos(pos) {
-    this.composition.setPos(pos);
-  }
-
-  get pos() {
-    return this.composition.pos;
-  }
-
-  get size() {
-    return this.composition.size;
-  }
-
-  getActiveIndex() {
-    return this.activeIndex;
-  }
-
-  getActive() {
+  get active() {
     return this.items[this.activeIndex];
   }
 
@@ -42,30 +26,14 @@ export class Menu {
     this.activeIndex = ((index % count) + count) % count;
   }
 
-  update(pad, gamestate) {
+  update(pad) {
     if (pad.justPressed(Pads.UP)) this.setActive(this.activeIndex - 1);
     if (pad.justPressed(Pads.DOWN)) this.setActive(this.activeIndex + 1);
-    if (pad.justPressed(Pads.CROSS)) {
-      switch (this.activeIndex) {
-        case 0:
-          gamestate.setState(1);
-          break;
-        default:
-          break;
-      }
-    }
+    if (pad.justPressed(Pads.CROSS)) this.actions.get(this.active)();
   }
 
-  render() {
-    const active = this.getActive();
-    if (!active) {
-      this.composition.render();
-      return;
-    }
-
-    const oldColor = active.color;
-    active.color = activeColor;
-    this.composition.render();
-    active.color = oldColor;
+  renderItem(item, index, x, y) {
+    if (index === this.activeIndex) item.render(x, y, activeColor);
+    else item.render(x, y);
   }
 }

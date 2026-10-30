@@ -9,8 +9,6 @@ export class Element {
   }
 
   setPos(pos) {
-    this.prevX = this.x;
-    this.prevY = this.y;
     this.x = pos.x;
     this.y = pos.y;
   }
@@ -19,16 +17,11 @@ export class Element {
     return { x: this.x, y: this.y };
   }
 
-  resetPos() {
-    this.x = this.prevX;
-    this.y = this.prevY;
-  }
-
-  render() {
-    throw new Error(`${this.constructor.name} must implement render()`);
-  }
-
   get size() {
     throw new Error(`${this.constructor.name} must implement the size getter`);
+  }
+
+  render(x = this.x, y = this.y) {
+    throw new Error(`${this.constructor.name} must implement render()`);
   }
 }
