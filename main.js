@@ -121,6 +121,27 @@ const gui = new Gui(margin, margin);
 gui.spread(canvas.width - margin * 2);
 gui.addField("score", (score) => `Score: ${score}`, 0);
 gui.addField("lives", (lives) => "O".repeat(Math.max(0, lives)), 3);
+
+// Ability status along the bottom of each half of the split screen:
+// the name when ready, otherwise whole seconds until it can be used again.
+const abilityText = (button) => (ability) =>
+  ability.ready
+    ? `${button} ${ability.definition.name}`
+    : `${button} ${Math.ceil(ability.timeLeft)}s`;
+
+function abilityGui(halfX, character) {
+  const abilities = new Gui(halfX + margin, 0);
+  abilities.spread(canvas.width / 2 - margin * 2);
+  abilities.addField("cross", abilityText("X"), character.abilities.cross);
+  abilities.addField("circle", abilityText("O"), character.abilities.circle);
+  abilities.setPos({
+    x: halfX + margin,
+    y: canvas.height - abilities.size.height - margin,
+  });
+  return abilities;
+}
+const playerAbilities = abilityGui(0, world.player);
+const monsterAbilities = abilityGui(canvas.width / 2, world.monster);
 const frameTimer = Timer.new();
 let t = Timer.getTime(frameTimer);
 
@@ -155,8 +176,12 @@ function main_loop() {
         gui.update({ score });
       }
       world.update(dt, controllerOne, controllerTwo);
+      playerAbilities.update(world.player.abilities);
+      monsterAbilities.update(world.monster.abilities);
       world.render();
       gui.render();
+      playerAbilities.render();
+      monsterAbilities.render();
       if (world.isPlayerDead()) gamestate.setState(2);
       else if (world.hasReachedExit()) gamestate.setState(5);
       break;
@@ -165,7 +190,7 @@ function main_loop() {
       gameOver.render();
       break;
     case 3: {
-      const pad = controller.pad;
+      const pad = controllerOne.pad;
       if (gameStateChanged) setName("");
       letters.update(pad);
       if (pad.justPressed(Pads.CROSS))
@@ -180,7 +205,7 @@ function main_loop() {
     }
     case 4:
       if (gameStateChanged) scoreboard = buildScoreboard();
-      if (controller.pad.justPressed(Pads.CIRCLE)) gamestate.setState(0);
+      if (controllerOne.pad.justPressed(Pads.CIRCLE)) gamestate.setState(0);
       scoreboard.render();
       break;
     case 5:

@@ -1,4 +1,5 @@
 import { Character } from "./character.js";
+import { Ability, POCKET_SAND, SPRINT } from "./abilities.js";
 
 const playerSprites = {
   east: new Image("assets/main-east.png"),
@@ -18,5 +19,9 @@ export class Player extends Character {
   constructor(health, x, y) {
     super(playerSprites, x, y, playerHitboxes, 0.6);
     this.health = health;
+    this.abilities = {
+      cross: new Ability(SPRINT),
+      circle: new Ability(POCKET_SAND),
+    };
   }
 }

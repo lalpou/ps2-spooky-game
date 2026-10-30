@@ -1,4 +1,5 @@
 import { Character } from "./character.js";
+import { Ability, BREAK_WALL, SCREAM } from "./abilities.js";
 
 const monsterSprites = {
   east: new Image("assets/enemy-east.png"),
@@ -17,5 +18,10 @@ const monsterHitboxes = {
 export class Monster extends Character {
   constructor(x, y) {
     super(monsterSprites, x, y, monsterHitboxes, 0.8);
+    this.speed = 3.5; // A little faster than the player's 3.
+    this.abilities = {
+      cross: new Ability(SCREAM),
+      circle: new Ability(BREAK_WALL),
+    };
   }
 }

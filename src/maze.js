@@ -130,12 +130,32 @@ export class Maze {
       ]) {
         const nx = x + dx;
         const ny = y + dy;
-        if (this.grid[ny][nx] === 1 || dist[ny][nx] !== -1) continue;
+        // isOpen checks bounds: the exit opening sits on the border.
+        if (!this.isOpen(nx, ny) || dist[ny][nx] !== -1) continue;
         dist[ny][nx] = dist[y][x] + 1;
         queue.push([nx, ny]);
       }
     }
     return dist;
+  }
+
+  /** @returns {boolean} true for an open grid cell inside the maze */
+  isOpen(gx, gy) {
+    return gx >= 0 && gy >= 0 && gx < this.width && gy < this.height && this.grid[gy][gx] === 0;
+  }
+
+  /**
+   * Removes one wall tile. The outer wall can't be broken, so the exit stays the only way out.
+   * Removing walls only adds connections, so the maze stays solvable.
+   * @returns {boolean} true if a wall was removed
+   */
+  breakWall(gx, gy) {
+    const onBorder = gx <= 0 || gy <= 0 || gx >= this.width - 1 || gy >= this.height - 1;
+    if (onBorder || this.grid[gy][gx] !== 1) return false;
+    this.grid[gy][gx] = 0;
+    // Collision reads the prebuilt rects (render reads the grid), and neighbours' connectors change too.
+    this.rects = this.buildWallRects();
+    return true;
   }
 
   /**

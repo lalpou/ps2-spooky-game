@@ -3,7 +3,7 @@ import { Maze } from "./maze.js";
 import { Monster } from "./monster.js";
 import { Player } from "./player.js";
 
-const PLAYER_SPEED = 3;
+const SPRINT_MULTIPLIER = 1.75;
 const DIVIDER_WIDTH = 4;
 const DIVIDER_COLOR = Color.new(0, 0, 0, 128);
 const FLOOR_TEXTURE_SIZE = 48;
@@ -65,6 +65,20 @@ const createFloor = ({ scale, viewport }) => {
   });
 };
 
+// Arrow on the monster's half, always pointing at the player, ARROW_DISTANCE px from the monster.
+const ARROW_DISTANCE = 60;
+const ARROW_LENGTH = 24;
+const ARROW_WIDTH = 16;
+const ARROW_COLOR = Color.new(255, 210, 0, 128);
+// Break wall looks this far ahead, in cells, for a wall tile to remove.
+const BREAK_REACH = 1;
+const FACING_DIRECTIONS = {
+  east: { x: 1, y: 0 },
+  west: { x: -1, y: 0 },
+  north: { x: 0, y: -1 },
+  south: { x: 0, y: 1 },
+};
+
 const calculatePlayerFacing = ({ x, y }) => {
   if (Math.abs(x) > Math.abs(y)) {
     if (x > 0) return "east";
@@ -105,16 +119,31 @@ export class World {
     this.monster = new Monster(monsterStart.x + 0.5, monsterStart.y + 0.5);
   }
 
-  handleInput(dt, controller, character) {
-    const leftStick = controller.getLeftStick();
+  // X and O use the character's abilities against the opponent; the stick moves it.
+  // Stunned characters can do neither.
+  handleInput(dt, controller, character, opponent) {
+    character.update(dt);
+    if (character.hasEffect("stunned")) return;
 
-    if (leftStick.x !== 0 || leftStick.y !== 0) {
-      character.facing = calculatePlayerFacing(leftStick);
+    const pad = controller.pad;
+    if (pad.justPressed(Pads.CROSS))
+      character.abilities.cross.use(character, opponent, this);
+    if (pad.justPressed(Pads.CIRCLE))
+      character.abilities.circle.use(character, opponent, this);
+
+    let { x, y } = controller.getLeftStick();
+    if (character.hasEffect("confused")) {
+      x = -x;
+      y = -y;
     }
+    if (x !== 0 || y !== 0) character.facing = calculatePlayerFacing({ x, y });
+
+    const sprint = character.hasEffect("sprinting") ? SPRINT_MULTIPLIER : 1;
+    const step = character.speed * sprint * dt;
     const moved = this.maze.moveBox(
       character,
-      leftStick.x * PLAYER_SPEED * dt,
-      leftStick.y * PLAYER_SPEED * dt,
+      x * step,
+      y * step,
       character.getHitbox(),
     );
     character.x = moved.x;
@@ -123,8 +152,8 @@ export class World {
 
   update(dt, playerController, monsterController) {
     const { player, monster } = this;
-    this.handleInput(dt, playerController, player);
-    this.handleInput(dt, monsterController, monster);
+    this.handleInput(dt, playerController, player, monster);
+    this.handleInput(dt, monsterController, monster, player);
     if (this.isMonsterHittingPlayer()) this.player.health -= 1;
   }
 
@@ -141,6 +170,22 @@ export class World {
       Math.abs(player.x - monster.x) < (a.w + b.w) / 2 &&
       Math.abs(player.y - monster.y) < (a.h + b.h) / 2
     );
+  }
+
+  /**
+   * Break wall: removes the first wall tile within BREAK_REACH cells in the
+   * direction the character faces. Walls are thin lines through the middle of
+   * their tile, so this also finds the wall a character is pressed against.
+   * @returns {boolean} true if a wall was removed
+   */
+  breakWallInFront(character) {
+    const direction = FACING_DIRECTIONS[character.facing];
+    for (const distance of [0.5, BREAK_REACH]) {
+      const gx = Math.floor(character.x + direction.x * distance);
+      const gy = Math.floor(character.y + direction.y * distance);
+      if (this.maze.breakWall(gx, gy)) return true;
+    }
+    return false;
   }
 
   /** @returns {boolean} true once the player has walked out through the maze opening */
@@ -181,9 +226,41 @@ export class World {
       camera.apply();
       this.renderFloor(camera, floor);
       this.maze.render(camera, [this.player, this.monster]);
+      this.player.renderOverlay(camera);
+      this.monster.renderOverlay(camera);
     }
+    // Still clipped to the monster's half from the loop above.
+    this.renderArrow();
     this.monsterCamera.release();
     const { x, h } = this.monsterCamera.viewport;
     Draw.rect(x - DIVIDER_WIDTH / 2, 0, DIVIDER_WIDTH, h, DIVIDER_COLOR);
+  }
+
+  // A triangle circling the monster, its tip pointing at the player.
+  renderArrow() {
+    const { player, monster, monsterCamera } = this;
+    const angle = Math.atan2(player.y - monster.y, player.x - monster.x);
+    const dirX = Math.cos(angle);
+    const dirY = Math.sin(angle);
+    // The camera follows the monster, so it's at the center of its viewport.
+    const centerX = monsterCamera.viewport.x + monsterCamera.halfW;
+    const centerY = monsterCamera.viewport.y + monsterCamera.halfH;
+
+    const baseX = centerX + dirX * ARROW_DISTANCE;
+    const baseY = centerY + dirY * ARROW_DISTANCE;
+    const tipX = baseX + dirX * ARROW_LENGTH;
+    const tipY = baseY + dirY * ARROW_LENGTH;
+    // Perpendicular to the direction, for the two back corners.
+    const sideX = -dirY * (ARROW_WIDTH / 2);
+    const sideY = dirX * (ARROW_WIDTH / 2);
+    Draw.triangle(
+      tipX,
+      tipY,
+      baseX + sideX,
+      baseY + sideY,
+      baseX - sideX,
+      baseY - sideY,
+      ARROW_COLOR,
+    );
   }
 }
