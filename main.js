@@ -99,6 +99,7 @@ function main_loop() {
       world.update(dt, controller);
       world.render();
       gui.render();
+      if (world.hasReachedExit()) gamestate.setState(5);
       break;
     case 2:
       gameOverMenu.update(controller.pad);
@@ -109,6 +110,9 @@ function main_loop() {
       break;
     case 4:
       //scoreboard
+      break;
+    case 5:
+      //win
       break;
   }
 

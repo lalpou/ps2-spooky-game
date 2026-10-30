@@ -44,6 +44,17 @@ export class World {
     player.y = moved.y;
   }
 
+  /** @returns {boolean} true once the player has walked out through the maze opening */
+  hasReachedExit() {
+    const { maze, player } = this;
+    return (
+      player.x < 0 ||
+      player.y < 0 ||
+      player.x >= maze.width ||
+      player.y >= maze.height
+    );
+  }
+
   render() {
     this.camera.follow(this.player);
     this.maze.render(this.camera, [this.player]);
