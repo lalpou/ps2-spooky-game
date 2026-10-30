@@ -7,6 +7,7 @@ import { Gui } from "./src/ui/gui.js";
 const canvas = Screen.getMode();
 
 Screen.setVSync(true);
+Screen.setParam(Screen.DEPTH_TEST_ENABLE, false);
 
 const gamestate = new GameState(1);
 const world = new World();
@@ -47,16 +48,14 @@ function main_loop() {
   lastState = state;
   switch (state) {
     case 0:
-      //menu
       menu.update(controller.pad);
       menu.render();
       break;
     case 1:
-      gui.render();
       if (gameStateChanged) world.reset();
       world.update(dt, controller);
       world.render();
-      //playing
+      gui.render();
       break;
     case 2:
       //game over
