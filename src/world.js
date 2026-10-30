@@ -19,13 +19,20 @@ export class World {
   update(dt, controller) {
     const leftStick = controller.getLeftStick();
 
-    this.player.x += leftStick.x * PLAYER_SPEED * dt;
-    this.player.y += leftStick.y * PLAYER_SPEED * dt;
+    const { player } = this;
+    const moved = this.maze.moveBox(
+      player,
+      leftStick.x * PLAYER_SPEED * dt,
+      leftStick.y * PLAYER_SPEED * dt,
+      player.size,
+    );
+    player.x = moved.x;
+    player.y = moved.y;
   }
 
   render() {
-    this.maze.render(this.camera);
     this.camera.follow(this.player);
+    this.maze.render(this.camera);
     this.player.render(this.camera);
   }
 }

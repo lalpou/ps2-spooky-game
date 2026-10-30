@@ -1,3 +1,5 @@
+const WALL_GAP = 0.001;
+
 export class Maze {
   /**
    * @param {number} width cells per row, rounded up to odd
@@ -22,6 +24,59 @@ export class Maze {
       x: 1 + 2 * Math.floor(Math.random() * cellsX),
       y: 1 + 2 * Math.floor(Math.random() * cellsY),
     };
+  }
+
+  /**
+   * @param {number} x box center
+   * @param {number} y box center
+   * @param {number} size box edge length in cells
+   * @returns {boolean} true if any corner of the box is inside a wall
+   */
+  isBoxInWall(x, y, size) {
+    const half = size / 2;
+    return (
+      this.isInWall(x - half, y - half) ||
+      this.isInWall(x + half, y - half) ||
+      this.isInWall(x - half, y + half) ||
+      this.isInWall(x + half, y + half)
+    );
+  }
+
+  /**
+   * Moves the box per axis so it slides along walls and stops flush against them.
+   * @param {{x: number, y: number}} pos box center
+   * @param {number} dx
+   * @param {number} dy
+   * @param {number} size box edge length in cells
+   * @returns {{x: number, y: number}}
+   */
+  moveBox(pos, dx, dy, size) {
+    const half = size / 2;
+    let { x, y } = pos;
+
+    const nextX = x + dx;
+    if (!this.isBoxInWall(nextX, y, size)) {
+      x = nextX;
+    } else if (dx > 0) {
+      x = Math.floor(nextX + half) - half - WALL_GAP;
+    } else if (dx < 0) {
+      x = Math.floor(nextX - half) + 1 + half + WALL_GAP;
+    }
+
+    const nextY = y + dy;
+    if (!this.isBoxInWall(x, nextY, size)) {
+      y = nextY;
+    } else if (dy > 0) {
+      y = Math.floor(nextY + half) - half - WALL_GAP;
+    } else if (dy < 0) {
+      y = Math.floor(nextY - half) + 1 + half + WALL_GAP;
+    }
+
+    return { x, y };
+  }
+
+  isInWall(x, y) {
+    return this.grid[Math.floor(y)][Math.floor(x)] === 1;
   }
 
   /**
