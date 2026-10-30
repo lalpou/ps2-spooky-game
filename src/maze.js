@@ -5,9 +5,9 @@ const MAX_SUBSTEPS = 200;
 const MAX_PUSH_OUT_ITERATIONS = 4;
 const WALL_FACE_HEIGHT = 1;
 const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
-const MIN_MONSTER_START_DISTANCE = 2;
-const MAX_MONSTER_START_DISTANCE = 2;
-const SPAWN_NEXT_TO_EXIT = true;
+const MIN_MONSTER_START_DISTANCE = 20;
+const MAX_MONSTER_START_DISTANCE = Infinity;
+const SPAWN_NEXT_TO_EXIT = false;
 
 const WALL_TILE_SIZE = 128;
 const wallTile = new Image("assets/wall_tile.png");
