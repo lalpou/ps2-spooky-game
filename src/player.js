@@ -1,21 +1,22 @@
-const color = Color.new(0, 255, 0, 128);
+import { Character } from "./character.js";
 
-export class Player {
+const playerSprites = {
+  east: new Image("assets/enemy-east.png"),
+  north: new Image("assets/enemy-north.png"),
+  south: new Image("assets/enemy-south.png"),
+  west: new Image("assets/enemy-west.png"),
+};
+
+const playerHitboxes = {
+  east: { w: 0.4, h: 0.5 },
+  north: { w: 0.6, h: 0.5 },
+  south: { w: 0.6, h: 0.5 },
+  west: { w: 0.4, h: 0.5 },
+};
+
+export class Player extends Character {
   constructor(health, x, y) {
+    super(playerSprites, x, y, playerHitboxes, 0.8);
     this.health = health;
-    /** @type {number} edge length in cells, centered on x/y */
-    this.size = 0.3;
-    this.x = x;
-    this.y = y;
-  }
-
-  render(camera) {
-    Draw.rect(
-      camera.toScreenX(this.x - this.size / 2),
-      camera.toScreenY(this.y - this.size / 2),
-      this.size * camera.scale,
-      this.size * camera.scale,
-      color,
-    );
   }
 }

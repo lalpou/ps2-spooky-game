@@ -4,6 +4,17 @@ import { Player } from "./player.js";
 
 const PLAYER_SPEED = 3;
 
+const calculatePlayerFacing = ({ x, y }) => {
+  if (Math.abs(x) > Math.abs(y)) {
+    if (x > 0) return "east";
+    return "west";
+  }
+
+  if (y < 0) return "north";
+
+  return "south";
+};
+
 export class World {
   constructor() {
     this.reset();
@@ -20,11 +31,14 @@ export class World {
     const leftStick = controller.getLeftStick();
 
     const { player } = this;
+    if (leftStick.x !== 0 || leftStick.y !== 0) {
+      player.facing = calculatePlayerFacing(leftStick);
+    }
     const moved = this.maze.moveBox(
       player,
       leftStick.x * PLAYER_SPEED * dt,
       leftStick.y * PLAYER_SPEED * dt,
-      player.size,
+      player.getHitbox(),
     );
     player.x = moved.x;
     player.y = moved.y;

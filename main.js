@@ -13,10 +13,10 @@ Screen.setVSync(true);
 Screen.setParam(Screen.DEPTH_TEST_ENABLE, false);
 Sound.setVolume(80);
 
-const gamestate = new GameState(2);
+const gamestate = new GameState(0);
 const world = new World();
 let lastState = null;
-const controller = new Controller(0, 0.1);
+const controller = new Controller(0, 0.25);
 let music = null;
 
 function playMusic(path) {

@@ -2,35 +2,31 @@ const WALL_GAP = 0.001;
 const WALL_THICKNESS = 0.1;
 const MAX_STEP = 0.05;
 const MAX_SUBSTEPS = 200;
+const MAX_PUSH_OUT_ITERATIONS = 4;
 const WALL_FACE_HEIGHT = 1;
 const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
 
-const horizontalWall = new Image("assets/wall_horizontal.png");
-const verticalWall = new Image("assets/wall_vertical.png");
-const SPRITE_SIZE = new Map([
-  [horizontalWall, { w: 135, h: 135 }],
-  [verticalWall, { w: 20, h: 135 }],
-]);
+const WALL_TILE_SIZE = 128;
+const wallTile = new Image("assets/wall_tile.png");
 
 /**
- * Draws a sprite stretched to a screen box.
- * @param {Image} image
+ * Draws a slice of the wall tile stretched to a screen box. The tile covers one
+ * cell, so slices of neighbouring walls line up.
  * @param {number} x
  * @param {number} y
  * @param {number} w
  * @param {number} h
- * @param {number} fx fraction of the sprite width to draw, from the left
- * @param {number} fy fraction of the sprite height to draw, from the bottom
+ * @param {number} fx fraction of the tile width to draw, from the left
+ * @param {number} fy fraction of the tile height to draw, from the bottom
  */
-const drawSprite = (image, x, y, w, h, fx = 1, fy = 1) => {
-  const size = SPRITE_SIZE.get(image);
-  image.startx = 0;
-  image.starty = size.h * (1 - fy);
-  image.endx = size.w * fx;
-  image.endy = size.h;
-  image.width = w;
-  image.height = h;
-  image.draw(x, y);
+const drawWallTile = (x, y, w, h, fx = 1, fy = 1) => {
+  wallTile.startx = 0;
+  wallTile.starty = WALL_TILE_SIZE * (1 - fy);
+  wallTile.endx = WALL_TILE_SIZE * fx;
+  wallTile.endy = WALL_TILE_SIZE;
+  wallTile.width = w;
+  wallTile.height = h;
+  wallTile.draw(x, y);
 };
 
 /**
@@ -115,20 +111,21 @@ export class Maze {
   /**
    * @param {number} x box center
    * @param {number} y box center
-   * @param {number} size box edge length in cells
+   * @param {{w: number, h: number}} box edge lengths in cells
    * @returns {{x0: number, y0: number, x1: number, y1: number}[]} wall rects overlapping the box
    */
-  hitRects(x, y, size) {
-    const half = size / 2;
+  hitRects(x, y, box) {
+    const halfW = box.w / 2;
+    const halfH = box.h / 2;
+    const minGx = Math.floor(x - halfW) - 1;
+    const maxGx = Math.floor(x + halfW) + 1;
+    const minGy = Math.floor(y - halfH) - 1;
+    const maxGy = Math.floor(y + halfH) + 1;
+    const left = Math.fround(x - halfW);
+    const right = Math.fround(x + halfW);
+    const top = Math.fround(y - halfH);
+    const bottom = Math.fround(y + halfH);
     const hits = [];
-    const minGx = Math.floor(x - half) - 1;
-    const maxGx = Math.floor(x + half) + 1;
-    const minGy = Math.floor(y - half) - 1;
-    const maxGy = Math.floor(y + half) + 1;
-    const left = Math.fround(x - half);
-    const right = Math.fround(x + half);
-    const top = Math.fround(y - half);
-    const bottom = Math.fround(y + half);
     for (let gy = minGy; gy <= maxGy; gy++) {
       for (let gx = minGx; gx <= maxGx; gx++) {
         const rects = this.wallRects(gx, gy);
@@ -148,19 +145,51 @@ export class Maze {
    * @param {{x: number, y: number}} pos box center
    * @param {number} dx
    * @param {number} dy
-   * @param {number} size box edge length in cells
+   * @param {{w: number, h: number}} box edge lengths in cells
    * @returns {{x: number, y: number}}
    */
-  moveBox(pos, dx, dy, size) {
+  moveBox(pos, dx, dy, box) {
     const steps = Math.min(
       MAX_SUBSTEPS,
       Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / MAX_STEP)),
     );
-    let current = pos;
+    let current = this.pushOut(pos, box);
     for (let i = 0; i < steps; i++) {
-      current = this.stepBox(current, dx / steps, dy / steps, size);
+      current = this.stepBox(current, dx / steps, dy / steps, box);
     }
     return current;
+  }
+
+  /**
+   * A character can end up inside a wall when its hitbox grows, e.g. after
+   * turning. Moves the box out along the axis with the least overlap.
+   * @param {{x: number, y: number}} pos box center
+   * @param {{w: number, h: number}} box edge lengths in cells
+   * @returns {{x: number, y: number}}
+   */
+  pushOut(pos, box) {
+    const halfW = box.w / 2;
+    const halfH = box.h / 2;
+    let { x, y } = pos;
+    for (let i = 0; i < MAX_PUSH_OUT_ITERATIONS; i++) {
+      const hits = this.hitRects(x, y, box);
+      if (hits.length === 0) break;
+      const r = hits[0];
+      const moves = [
+        { dx: r.x0 - halfW - WALL_GAP - x, dy: 0 },
+        { dx: r.x1 + halfW + WALL_GAP - x, dy: 0 },
+        { dx: 0, dy: r.y0 - halfH - WALL_GAP - y },
+        { dx: 0, dy: r.y1 + halfH + WALL_GAP - y },
+      ];
+      const least = moves.reduce((a, b) =>
+        Math.abs(a.dx) + Math.abs(a.dy) <= Math.abs(b.dx) + Math.abs(b.dy)
+          ? a
+          : b,
+      );
+      x += least.dx;
+      y += least.dy;
+    }
+    return { x, y };
   }
 
   /**
@@ -168,15 +197,16 @@ export class Maze {
    * @param {{x: number, y: number}} pos box center
    * @param {number} dx
    * @param {number} dy
-   * @param {number} size box edge length in cells
+   * @param {{w: number, h: number}} box edge lengths in cells
    * @returns {{x: number, y: number}}
    */
-  stepBox(pos, dx, dy, size) {
-    const half = size / 2;
+  stepBox(pos, dx, dy, box) {
+    const halfW = box.w / 2;
+    const halfH = box.h / 2;
     let { x, y } = pos;
 
     const nextX = x + dx;
-    const hitsX = this.hitRects(nextX, y, size);
+    const hitsX = this.hitRects(nextX, y, box);
     if (hitsX.length === 0) {
       x = nextX;
     } else if (dx > 0) {
@@ -185,7 +215,7 @@ export class Maze {
           null,
           hitsX.map((r) => r.x0),
         ) -
-        half -
+        halfW -
         WALL_GAP;
     } else if (dx < 0) {
       x =
@@ -193,12 +223,12 @@ export class Maze {
           null,
           hitsX.map((r) => r.x1),
         ) +
-        half +
+        halfW +
         WALL_GAP;
     }
 
     const nextY = y + dy;
-    const hitsY = this.hitRects(x, nextY, size);
+    const hitsY = this.hitRects(x, nextY, box);
     if (hitsY.length === 0) {
       y = nextY;
     } else if (dy > 0) {
@@ -207,7 +237,7 @@ export class Maze {
           null,
           hitsY.map((r) => r.y0),
         ) -
-        half -
+        halfH -
         WALL_GAP;
     } else if (dy < 0) {
       y =
@@ -215,7 +245,7 @@ export class Maze {
           null,
           hitsY.map((r) => r.y1),
         ) +
-        half +
+        halfH +
         WALL_GAP;
     }
 
@@ -302,13 +332,15 @@ export class Maze {
   }
 
   /**
-   * Walls are drawn row by row, and entities are drawn between rows by their y,
+   * Walls are drawn row by row, and entities are drawn between rows by their bottom edge,
    * so anything further down the screen ends up on top.
    * @param {Camera2D} camera
-   * @param {{y: number, render: (camera: Camera2D) => void}[]} entities
+   * @param {{bottom: number, render: (camera: Camera2D) => void}[]} entities
    */
   render(camera, entities = []) {
-    const pending = entities.slice().sort((a, b) => a.y - b.y);
+    const pending = entities
+      .map((entity) => ({ entity, bottom: Math.fround(entity.bottom) }))
+      .sort((a, b) => a.bottom - b.bottom);
     let next = 0;
     const h = WALL_THICKNESS / 2;
     const cullingOffset = 90;
@@ -326,8 +358,9 @@ export class Maze {
     const px = (cells) => Math.max(1, Math.round(cells * camera.scale));
 
     for (let y = minY; y <= maxY; y++) {
-      while (next < pending.length && pending[next].y < y + 0.5 + h) {
-        pending[next++].render(camera);
+      const rowBottom = Math.fround(y + 0.5 + h);
+      while (next < pending.length && pending[next].bottom < rowBottom) {
+        pending[next++].entity.render(camera);
       }
       for (let x = minX; x <= maxX; x++) {
         if (this.grid[y][x] !== 1) continue;
@@ -340,12 +373,11 @@ export class Maze {
 
         if (hasRight || hasLeft) {
           const span = hasRight ? 1 : WALL_THICKNESS;
-          const isSouth = cy > camera.y;
+          const isSouth = Math.fround(cy) > Math.fround(camera.y);
           const faceHeight = isSouth
             ? SOUTH_WALL_FACE_HEIGHT
             : WALL_FACE_HEIGHT;
-          drawSprite(
-            horizontalWall,
+          drawWallTile(
             camera.toScreenX(cx - h),
             camera.toScreenY(cy + h - faceHeight),
             px(span),
@@ -354,29 +386,31 @@ export class Maze {
             faceHeight / WALL_FACE_HEIGHT,
           );
         } else {
-          drawSprite(
-            verticalWall,
+          drawWallTile(
             camera.toScreenX(cx - h),
             camera.toScreenY(cy - h),
             px(WALL_THICKNESS),
             px(WALL_THICKNESS),
+            WALL_THICKNESS,
+            WALL_THICKNESS,
           );
         }
 
         if (hasDown) {
-          drawSprite(
-            verticalWall,
+          drawWallTile(
             camera.toScreenX(cx - h),
             camera.toScreenY(cy + h),
             px(WALL_THICKNESS),
             px(1 - WALL_THICKNESS),
+            WALL_THICKNESS,
+            1 - WALL_THICKNESS,
           );
         }
       }
     }
 
     while (next < pending.length) {
-      pending[next++].render(camera);
+      pending[next++].entity.render(camera);
     }
   }
 }
