@@ -2,6 +2,36 @@ const WALL_GAP = 0.001;
 const WALL_THICKNESS = 0.1;
 const MAX_STEP = 0.05;
 const MAX_SUBSTEPS = 200;
+const WALL_FACE_HEIGHT = 1;
+const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
+
+const horizontalWall = new Image("assets/wall_horizontal.png");
+const verticalWall = new Image("assets/wall_vertical.png");
+const SPRITE_SIZE = new Map([
+  [horizontalWall, { w: 135, h: 135 }],
+  [verticalWall, { w: 20, h: 135 }],
+]);
+
+/**
+ * Draws a sprite stretched to a screen box.
+ * @param {Image} image
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {number} fx fraction of the sprite width to draw, from the left
+ * @param {number} fy fraction of the sprite height to draw, from the bottom
+ */
+const drawSprite = (image, x, y, w, h, fx = 1, fy = 1) => {
+  const size = SPRITE_SIZE.get(image);
+  image.startx = 0;
+  image.starty = size.h * (1 - fy);
+  image.endx = size.w * fx;
+  image.endy = size.h;
+  image.width = w;
+  image.height = h;
+  image.draw(x, y);
+};
 
 /**
  * Mixed float32/double comparisons gave wrong results in AthenaEnv, so wall
@@ -271,31 +301,82 @@ export class Maze {
     return grid;
   }
 
-  render(camera) {
-    const wallColor = Color.new(255, 0, 0, 128);
-    const cullingOffset = 50;
+  /**
+   * Walls are drawn row by row, and entities are drawn between rows by their y,
+   * so anything further down the screen ends up on top.
+   * @param {Camera2D} camera
+   * @param {{y: number, render: (camera: Camera2D) => void}[]} entities
+   */
+  render(camera, entities = []) {
+    const pending = entities.slice().sort((a, b) => a.y - b.y);
+    let next = 0;
+    const h = WALL_THICKNESS / 2;
+    const cullingOffset = 90;
 
     const spanX = (camera.halfW + cullingOffset) / camera.scale;
     const spanY = (camera.halfW + cullingOffset) / camera.scale;
     const minX = Math.max(0, Math.floor(camera.x - spanX));
     const maxX = Math.min(this.width - 1, Math.ceil(camera.x + spanX));
     const minY = Math.max(0, Math.floor(camera.y - spanY));
-    const maxY = Math.min(this.height - 1, Math.ceil(camera.y + spanY));
+    const maxY = Math.min(
+      this.height - 1,
+      Math.ceil(camera.y + spanY + WALL_FACE_HEIGHT),
+    );
+
+    const px = (cells) => Math.max(1, Math.round(cells * camera.scale));
 
     for (let y = minY; y <= maxY; y++) {
+      while (next < pending.length && pending[next].y < y + 0.5 + h) {
+        pending[next++].render(camera);
+      }
       for (let x = minX; x <= maxX; x++) {
-        const rects = this.wallRects(x, y);
-        for (let i = 0; i < rects.length; i++) {
-          const r = rects[i];
-          Draw.rect(
-            camera.toScreenX(r.x0),
-            camera.toScreenY(r.y0),
-            Math.max(1, Math.round((r.x1 - r.x0) * camera.scale)),
-            Math.max(1, Math.round((r.y1 - r.y0) * camera.scale)),
-            wallColor,
+        if (this.grid[y][x] !== 1) continue;
+
+        const cx = x + 0.5;
+        const cy = y + 0.5;
+        const hasRight = x + 1 < this.width && this.grid[y][x + 1] === 1;
+        const hasLeft = x > 0 && this.grid[y][x - 1] === 1;
+        const hasDown = y + 1 < this.height && this.grid[y + 1][x] === 1;
+
+        if (hasRight || hasLeft) {
+          const span = hasRight ? 1 : WALL_THICKNESS;
+          const isSouth = cy > camera.y;
+          const faceHeight = isSouth
+            ? SOUTH_WALL_FACE_HEIGHT
+            : WALL_FACE_HEIGHT;
+          drawSprite(
+            horizontalWall,
+            camera.toScreenX(cx - h),
+            camera.toScreenY(cy + h - faceHeight),
+            px(span),
+            px(faceHeight),
+            span,
+            faceHeight / WALL_FACE_HEIGHT,
+          );
+        } else {
+          drawSprite(
+            verticalWall,
+            camera.toScreenX(cx - h),
+            camera.toScreenY(cy - h),
+            px(WALL_THICKNESS),
+            px(WALL_THICKNESS),
+          );
+        }
+
+        if (hasDown) {
+          drawSprite(
+            verticalWall,
+            camera.toScreenX(cx - h),
+            camera.toScreenY(cy + h),
+            px(WALL_THICKNESS),
+            px(1 - WALL_THICKNESS),
           );
         }
       }
+    }
+
+    while (next < pending.length) {
+      pending[next++].render(camera);
     }
   }
 }

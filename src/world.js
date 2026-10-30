@@ -32,7 +32,6 @@ export class World {
 
   render() {
     this.camera.follow(this.player);
-    this.maze.render(this.camera);
-    this.player.render(this.camera);
+    this.maze.render(this.camera, [this.player]);
   }
 }
