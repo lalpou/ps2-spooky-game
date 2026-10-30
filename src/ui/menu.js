@@ -10,7 +10,7 @@ export class Menu extends Composition {
     this.actions = new Map();
   }
   addOption(text, onSelect = () => {}) {
-    const label = new Label(text);
+    const label = new Label(text, { scale: 1.5 });
     this.addItems(label);
     this.actions.set(label, onSelect);
     return label;

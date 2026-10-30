@@ -1,36 +1,26 @@
 import { Element } from "./element.js";
+import { BitmapFont } from "./bitmapfont.js";
 
-// Shared by all labels: Athena only loads the "default" font for the first
-// new Font("default"); every later instance gets an empty font and draws nothing.
-const defaultFont = new Font("default");
+// One shared font for all text. Made from Press Start 2P, see assets/fonts/OFL.txt.
+const font = new BitmapFont("assets/fonts/pixel.png");
 
 export class Label extends Element {
   /**
    * @param {string} text
-   * @param {{color?: number, scale?: number, thickness?: number}} style
+   * @param {{color?: number, scale?: number}} style scale 1 is 16px; whole numbers keep pixels square
    */
-  constructor(
-    text,
-    { color = Color.new(255, 255, 0, 128), scale = 1, thickness = 1 } = {},
-  ) {
+  constructor(text, { color = Color.new(255, 255, 0, 128), scale = 1 } = {}) {
     super();
     this.text = text;
-    this.font = defaultFont;
     this.color = color;
     this.scale = scale;
-    this.thickness = thickness; // Faux bold in px, 0 for normal weight.
   }
 
   get size() {
-    this.font.scale = this.scale;
-    return this.font.getTextSize(this.text);
+    return font.measure(this.text, this.scale);
   }
 
   render(x = this.x, y = this.y, color = this.color) {
-    this.font.color = color;
-    this.font.scale = this.scale;
-    this.font.outline = this.thickness;
-    this.font.outline_color = color;
-    this.font.print(x, y, this.text);
+    font.print(x, y, this.text, this.scale, color);
   }
 }
