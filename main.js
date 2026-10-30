@@ -3,7 +3,6 @@ import { World } from "./src/world.js";
 
 import { Label } from "./src/ui/label.js";
 import { Menu } from "./src/ui/menu.js";
-import { GameState } from "./src/gamestate.js";
 
 const canvas = Screen.getMode();
 Screen.setVSync(true);
@@ -42,7 +41,7 @@ function main_loop() {
   switch (state) {
     case 0:
       //menu
-      menu.update(pad);
+      menu.update(pad, gamestate);
       menu.render();
       break;
     case 1:

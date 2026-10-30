@@ -42,9 +42,18 @@ export class Menu {
     this.activeIndex = ((index % count) + count) % count;
   }
 
-  update(pad) {
+  update(pad, gamestate) {
     if (pad.justPressed(Pads.UP)) this.setActive(this.activeIndex - 1);
     if (pad.justPressed(Pads.DOWN)) this.setActive(this.activeIndex + 1);
+    if (pad.justPressed(Pads.CROSS)) {
+      switch (this.activeIndex) {
+        case 0:
+          gamestate.setState(1);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   render() {
