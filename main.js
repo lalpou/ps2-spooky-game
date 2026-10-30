@@ -6,6 +6,8 @@ import { Gui } from "./src/ui/gui.js";
 import { Picture } from "./src/ui/picture.js";
 import { Label } from "./src/ui/label.js";
 import { Composition } from "./src/ui/composition.js";
+import { Grid } from "./src/ui/grid.js";
+import { saveScore } from "./src/scores.js";
 
 const canvas = Screen.getMode();
 
@@ -18,6 +20,7 @@ const world = new World();
 let lastState = null;
 const controller = new Controller(0, 0.25);
 let music = null;
+let score = 0;
 
 function playMusic(path) {
   if (music) music.free();
@@ -62,6 +65,32 @@ gameOver.setPos({
   y: (canvas.height - gameOver.size.height) / 2,
 });
 
+const letters = new Grid(0, 0, 7);
+for (let code = 65; code <= 90; code++) {
+  letters.addItems(new Label(String.fromCharCode(code), { scale: 1.5 }));
+}
+
+const nameLength = 3;
+let playerName = "";
+const nameLabel = new Label("", { scale: 2 });
+const saveHint = new Label("Press START to save");
+const hintReady = Color.new(255, 255, 255, 128);
+const hintWaiting = Color.new(100, 100, 100, 128);
+
+function setName(name) {
+  playerName = name.slice(0, nameLength);
+  nameLabel.text = (playerName + "___").slice(0, nameLength);
+  saveHint.color = playerName ? hintReady : hintWaiting;
+}
+setName("");
+
+const nameEntry = new Composition(0, 0, Composition.VERTICAL, 20);
+nameEntry.addItems(nameLabel, letters, saveHint);
+nameEntry.setPos({
+  x: (canvas.width - nameEntry.size.width) / 2,
+  y: (canvas.height - nameEntry.size.height) / 2,
+});
+
 const gui = new Gui(margin, margin);
 gui.spread(canvas.width - margin * 2);
 gui.addField("score", (score) => `Score: ${score}`, 0);
@@ -95,6 +124,8 @@ function main_loop() {
       if (gameStateChanged) {
         playMusic("assets/halloween-maze-song.wav");
         world.reset();
+        score = 0;
+        gui.update({ score });
       }
       world.update(dt, controller);
       world.render();
@@ -105,9 +136,20 @@ function main_loop() {
       gameOverMenu.update(controller.pad);
       gameOver.render();
       break;
-    case 3:
-      //enter name
+    case 3: {
+      const pad = controller.pad;
+      if (gameStateChanged) setName("");
+      letters.update(pad);
+      if (pad.justPressed(Pads.CROSS))
+        setName(playerName + letters.active.text);
+      if (pad.justPressed(Pads.CIRCLE)) setName(playerName.slice(0, -1));
+      if (pad.justPressed(Pads.START) && playerName) {
+        saveScore(playerName, score);
+        gamestate.setState(4);
+      }
+      nameEntry.render();
       break;
+    }
     case 4:
       //scoreboard
       break;
