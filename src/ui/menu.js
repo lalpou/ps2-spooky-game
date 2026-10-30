@@ -2,6 +2,10 @@ import { Composition } from "./composition.js";
 import { Label } from "./label.js";
 
 const activeColor = Color.new(255, 255, 255, 128);
+const optionScale = 1.5;
+
+const cursor = new Label(">", { scale: optionScale });
+const cursorIndent = cursor.size.width + 8;
 
 export class Menu extends Composition {
   constructor(x, y, gap = 10) {
@@ -10,7 +14,7 @@ export class Menu extends Composition {
     this.actions = new Map();
   }
   addOption(text, onSelect = () => {}) {
-    const label = new Label(text, { scale: 1.5 });
+    const label = new Label(text, { scale: optionScale });
     this.addItems(label);
     this.actions.set(label, onSelect);
     return label;
@@ -32,8 +36,17 @@ export class Menu extends Composition {
     if (pad.justPressed(Pads.CROSS)) this.actions.get(this.active)();
   }
 
+  get size() {
+    const size = super.size;
+    return { width: size.width + cursorIndent, height: size.height };
+  }
+
   renderItem(item, index, x, y) {
-    if (index === this.activeIndex) item.render(x, y, activeColor);
-    else item.render(x, y);
+    if (index === this.activeIndex) {
+      cursor.render(x, y, activeColor);
+      item.render(x + cursorIndent, y, activeColor);
+    } else {
+      item.render(x + cursorIndent, y);
+    }
   }
 }
