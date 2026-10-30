@@ -18,7 +18,8 @@ Sound.setVolume(80);
 const gamestate = new GameState(0);
 const world = new World();
 let lastState = null;
-const controller = new Controller(0, 0.25);
+const controllerOne = new Controller(0, 0.25);
+const controllerTwo = new Controller(1, 0.25);
 let music = null;
 let score = 0;
 
@@ -128,7 +129,8 @@ while (true) {
 }
 
 function main_loop() {
-  controller.update();
+  controllerOne.update();
+  controllerTwo.update();
   const now = Timer.getTime(frameTimer);
   const dt = (now - t) / 1000000;
   t = now;
@@ -142,7 +144,7 @@ function main_loop() {
       if (gameStateChanged) playMusic("assets/halloween-start-music.wav");
       //menu
       menuEnemy.render();
-      menu.update(controller.pad);
+      menu.update(controllerOne.pad);
       menu.render();
       break;
     case 1:
@@ -152,13 +154,13 @@ function main_loop() {
         score = 0;
         gui.update({ score });
       }
-      world.update(dt, controller);
+      world.update(dt, controllerOne, controllerTwo);
       world.render();
       gui.render();
       if (world.hasReachedExit()) gamestate.setState(5);
       break;
     case 2:
-      gameOverMenu.update(controller.pad);
+      gameOverMenu.update(controllerOne.pad);
       gameOver.render();
       break;
     case 3: {

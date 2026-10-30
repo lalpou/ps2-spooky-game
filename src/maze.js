@@ -5,6 +5,7 @@ const MAX_SUBSTEPS = 200;
 const MAX_PUSH_OUT_ITERATIONS = 4;
 const WALL_FACE_HEIGHT = 1;
 const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
+const MIN_MONSTER_START_DISTANCE = 20;
 
 const WALL_TILE_SIZE = 128;
 const wallTile = new Image("assets/wall_tile.png");
@@ -52,8 +53,12 @@ export class Maze {
     this.grid = this.generate();
     /** @type {{x: number, y: number}} */
     this.start = this.pickStart();
+    /** @type {{x: number, y: number}} random open cell at least MIN_MONSTER_START_DISTANCE steps from start */
+    this.monsterStart = this.pickMonsterStart();
     /** @type {{x: number, y: number}} open cell next to the border, farthest from start */
-    this.exit = this.farthestFrom(this.start, (x, y) => this.touchesBorder(x, y));
+    this.exit = this.farthestFrom(this.start, (x, y) =>
+      this.touchesBorder(x, y),
+    );
     /** @type {{x: number, y: number}} border cell opened so the player can walk out */
     this.opening = this.openExit();
     this.rects = this.buildWallRects();
@@ -61,9 +66,7 @@ export class Maze {
 
   /** @returns {boolean} true if the cell is adjacent to the outer wall */
   touchesBorder(x, y) {
-    return (
-      x === 1 || y === 1 || x === this.width - 2 || y === this.height - 2
-    );
+    return x === 1 || y === 1 || x === this.width - 2 || y === this.height - 2;
   }
 
   /**
@@ -89,6 +92,47 @@ export class Maze {
       x: 1 + 2 * Math.floor(Math.random() * cellsX),
       y: 1 + 2 * Math.floor(Math.random() * cellsY),
     };
+  }
+
+  /** @returns {{x: number, y: number}} falls back to the farthest cell if the maze is too small */
+  pickMonsterStart() {
+    const dist = this.distancesFrom(this.start);
+    const candidates = [];
+    for (let y = 1; y < this.height; y += 2) {
+      for (let x = 1; x < this.width; x += 2) {
+        if (dist[y][x] >= MIN_MONSTER_START_DISTANCE) candidates.push({ x, y });
+      }
+    }
+    if (candidates.length === 0) return this.farthestFrom(this.start);
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  /**
+   * @param {{x: number, y: number}} from
+   * @returns {number[][]} walking steps from `from` by [y][x], -1 if unreachable
+   */
+  distancesFrom(from) {
+    const dist = Array.from({ length: this.height }, () =>
+      new Array(this.width).fill(-1),
+    );
+    dist[from.y][from.x] = 0;
+    const queue = [[from.x, from.y]];
+    for (let i = 0; i < queue.length; i++) {
+      const [x, y] = queue[i];
+      for (const [dx, dy] of [
+        [0, -1],
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+      ]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (this.grid[ny][nx] === 1 || dist[ny][nx] !== -1) continue;
+        dist[ny][nx] = dist[y][x] + 1;
+        queue.push([nx, ny]);
+      }
+    }
+    return dist;
   }
 
   /**
@@ -282,36 +326,16 @@ export class Maze {
    * @returns {{x: number, y: number}} accepted open cell with the longest walking path from `from`
    */
   farthestFrom(from, accept = () => true) {
-    const dist = Array.from({ length: this.height }, () =>
-      new Array(this.width).fill(-1),
-    );
-    dist[from.y][from.x] = 0;
-    const queue = [[from.x, from.y]];
-    let farthest = null;
-
-    for (let i = 0; i < queue.length; i++) {
-      const [x, y] = queue[i];
-      for (const [dx, dy] of [
-        [0, -1],
-        [1, 0],
-        [0, 1],
-        [-1, 0],
-      ]) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (this.grid[ny][nx] === 1 || dist[ny][nx] !== -1) continue;
-        dist[ny][nx] = dist[y][x] + 1;
-        queue.push([nx, ny]);
-        if (
-          accept(nx, ny) &&
-          (!farthest || dist[ny][nx] > dist[farthest.y][farthest.x])
-        ) {
-          farthest = { x: nx, y: ny };
+    const dist = this.distancesFrom(from);
+    let farthest = from;
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        if (dist[y][x] > dist[farthest.y][farthest.x] && accept(x, y)) {
+          farthest = { x, y };
         }
       }
     }
-
-    return farthest ?? from;
+    return farthest;
   }
 
   /** @returns {number[][]} */
