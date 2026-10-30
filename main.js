@@ -1,16 +1,18 @@
+import { Controller } from "./src/controller.js";
 import { GameState } from "./src/gamestate.js";
 import { World } from "./src/world.js";
-
 import { Label } from "./src/ui/label.js";
 import { Menu } from "./src/ui/menu.js";
 
 const canvas = Screen.getMode();
+const font = new Font("default");
+
 Screen.setVSync(true);
 
 const gamestate = new GameState(0);
 const world = new World();
 let lastState = null;
-const pad = Pads.get();
+const controller = new Controller(0, 0.1);
 
 const menu = new Menu(0, 0, 10);
 menu.addItems(
@@ -24,28 +26,39 @@ menu.setPos({
   x: margin,
   y: canvas.height - menu.size.height - margin,
 });
+const frameTimer = Timer.new();
+let t = Timer.getTime(frameTimer);
 
-function init() {}
-
-init();
 while (true) {
   main_loop();
 }
 
 function main_loop() {
+  controller.update();
+  const now = Timer.getTime(frameTimer);
+  const dt = (now - t) / 1000000;
+  t = now;
+
   Screen.clear();
-  pad.update();
   const state = gamestate.getState();
   const gameStateChanged = state !== lastState;
   lastState = state;
   switch (state) {
     case 0:
       //menu
-      menu.update(pad, gamestate);
+      menu.update(controller.pad, gamestate);
       menu.render();
       break;
     case 1:
       if (gameStateChanged) world.reset();
+      world.update(dt, controller);
+      const stick = controller.getLeftStick();
+      font.print(10, 10, `lx ${controller.pad.lx} ly ${controller.pad.ly}`);
+      font.print(
+        10,
+        30,
+        `x ${stick.x.toFixed(2)} y ${stick.y.toFixed(2)} dt ${dt.toFixed(4)}`,
+      );
       world.render();
       //playing
       break;
