@@ -9,7 +9,7 @@ export class World {
 
   reset() {
     this.maze = new Maze(50, 50);
-    this.camera = new Camera2D(10);
+    this.camera = new Camera2D(180);
     const start = this.maze.start;
     this.player = new Player(1, start.x + 0.5, start.y + 0.5);
   }

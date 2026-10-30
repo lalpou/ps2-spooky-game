@@ -4,7 +4,7 @@ export class Player {
   constructor(health, x, y) {
     this.health = health;
     /** @type {number} edge length in cells, centered on x/y */
-    this.size = 0.5;
+    this.size = 0.1;
     this.x = x;
     this.y = y;
   }
