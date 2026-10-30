@@ -17,12 +17,12 @@ export class Composition extends Element {
     this.items.push(...items.flat());
   }
 
-  getSize() {
+  get size() {
     let width = 0;
     let height = 0;
 
     for (const item of this.items) {
-      const size = item.getSize();
+      const size = item.size;
       if (this.direction === Composition.VERTICAL) {
         width = Math.max(width, size.width);
         height += size.height;
@@ -44,12 +44,12 @@ export class Composition extends Element {
     let cursorY = this.y;
 
     for (const item of this.items) {
-      const { x, y } = item.getPos();
+      const { x, y } = item.pos;
       item.setPos({ x: cursorX + x, y: cursorY + y });
       item.render();
       item.resetPos();
 
-      const size = item.getSize();
+      const size = item.size;
       if (this.direction === Composition.VERTICAL)
         cursorY += size.height + this.gap;
       else cursorX += size.width + this.gap;

@@ -14,7 +14,7 @@ export class Label extends Element {
     this.thickness = 1;
   }
 
-  getSize() {
+  get size() {
     this.font.scale = this.scale;
     return this.font.getTextSize(this.label);
   }

@@ -15,7 +15,7 @@ export class Element {
     this.y = pos.y;
   }
 
-  getPos() {
+  get pos() {
     return { x: this.x, y: this.y };
   }
 
@@ -28,8 +28,7 @@ export class Element {
     throw new Error(`${this.constructor.name} must implement render()`);
   }
 
-  /** @returns {{width: number, height: number}} */
-  getSize() {
-    throw new Error(`${this.constructor.name} must implement getSize()`);
+  get size() {
+    throw new Error(`${this.constructor.name} must implement the size getter`);
   }
 }

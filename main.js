@@ -22,7 +22,7 @@ menu.addItems(
 const margin = 20;
 menu.setPos({
   x: margin,
-  y: canvas.height - menu.getSize().height - margin,
+  y: canvas.height - menu.size.height - margin,
 });
 
 function init() {}

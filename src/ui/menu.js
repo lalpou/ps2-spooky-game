@@ -20,12 +20,12 @@ export class Menu {
     this.composition.setPos(pos);
   }
 
-  getPos() {
-    return this.composition.getPos();
+  get pos() {
+    return this.composition.pos;
   }
 
-  getSize() {
-    return this.composition.getSize();
+  get size() {
+    return this.composition.size;
   }
 
   getActiveIndex() {
