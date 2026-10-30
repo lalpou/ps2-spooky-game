@@ -6,6 +6,64 @@ import { Player } from "./player.js";
 const PLAYER_SPEED = 3;
 const DIVIDER_WIDTH = 4;
 const DIVIDER_COLOR = Color.new(0, 0, 0, 128);
+const FLOOR_TEXTURE_SIZE = 48;
+
+const FLOOR_BLEND = Screen.alphaEquation(
+  Screen.SRC_RGB,
+  Screen.DST_RGB,
+  Screen.SRC_ALPHA,
+  Screen.DST_RGB,
+  0,
+);
+
+// GS alpha is 0..128, where 128 is fully opaque
+const OPAQUE_ALPHA = 128;
+
+TileMap.init();
+
+/**
+ * Builds a grid of floor tiles, one per cell, just large enough to cover a
+ * camera viewport at any scroll position.
+ * @param {Camera2D} camera
+ */
+const createFloor = ({ scale, viewport }) => {
+  const cols = Math.ceil(viewport.w / scale) + 1;
+  const rows = Math.ceil(viewport.h / scale) + 1;
+  const sprites = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      sprites.push({
+        x: col * scale,
+        y: row * scale,
+        zindex: 1,
+        w: scale,
+        h: scale,
+        u1: 0,
+        v1: 0,
+        u2: FLOOR_TEXTURE_SIZE,
+        v2: FLOOR_TEXTURE_SIZE,
+        r: 255,
+        g: 255,
+        b: 255,
+        a: OPAQUE_ALPHA,
+      });
+    }
+  }
+  const descriptor = new TileMap.Descriptor({
+    textures: ["assets/flooring.png"],
+    materials: [
+      {
+        texture_index: 0,
+        blend_mode: FLOOR_BLEND,
+        end_offset: sprites.length - 1,
+      },
+    ],
+  });
+  return new TileMap.Instance({
+    descriptor,
+    spriteBuffer: TileMap.SpriteBuffer.fromObjects(sprites),
+  });
+};
 
 const calculatePlayerFacing = ({ x, y }) => {
   if (Math.abs(x) > Math.abs(y)) {
@@ -39,6 +97,8 @@ export class World {
       w: width - halfWidth,
       h: height,
     });
+    this.playerFloor = createFloor(this.playerCamera);
+    this.monsterFloor = createFloor(this.monsterCamera);
     const start = this.maze.start;
     const monsterStart = this.maze.monsterStart;
     this.player = new Player(1, start.x + 0.5, start.y + 0.5);
@@ -78,11 +138,32 @@ export class World {
     );
   }
 
+  /**
+   * Scrolls a floor grid so its tiles stay aligned to the world cells.
+   * @param {Camera2D} camera
+   * @param {TileMap.Instance} floor
+   */
+  renderFloor(camera, floor) {
+    const { scale, viewport } = camera;
+    const relX = camera.toScreenX(0) - viewport.x;
+    const relY = camera.toScreenY(0) - viewport.y;
+    floor.render(
+      viewport.x + relX - Math.ceil(relX / scale) * scale,
+      viewport.y + relY - Math.ceil(relY / scale) * scale,
+    );
+  }
+
   render() {
     this.playerCamera.follow(this.player);
     this.monsterCamera.follow(this.monster);
-    for (const camera of [this.playerCamera, this.monsterCamera]) {
+    TileMap.begin();
+    const cameras = [
+      [this.playerCamera, this.playerFloor],
+      [this.monsterCamera, this.monsterFloor],
+    ];
+    for (const [camera, floor] of cameras) {
       camera.apply();
+      this.renderFloor(camera, floor);
       this.maze.render(camera, [this.player, this.monster]);
     }
     this.monsterCamera.release();
