@@ -16,7 +16,7 @@ export class World {
 
   render() {
     this.maze.render(this.camera);
-    this.player.render(this.camera);
     this.camera.follow(this.player);
+    this.player.render(this.camera);
   }
 }

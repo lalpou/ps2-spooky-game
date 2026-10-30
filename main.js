@@ -1,4 +1,3 @@
-import { Maze } from "./src/maze.js";
 import { GameState } from "./src/gamestate.js";
 import { World } from "./src/world.js";
 

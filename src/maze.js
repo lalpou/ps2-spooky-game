@@ -106,8 +106,15 @@ export class Maze {
   render(camera) {
     const wallColor = Color.new(255, 0, 0, 128);
 
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
+    const spanX = camera.halfW / camera.scale;
+    const spanY = camera.halfH / camera.scale;
+    const minX = Math.max(0, Math.floor(camera.x - spanX));
+    const maxX = Math.min(this.width - 1, Math.ceil(camera.x + spanX));
+    const minY = Math.max(0, Math.floor(camera.y - spanY));
+    const maxY = Math.min(this.height - 1, Math.ceil(camera.y + spanY));
+
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
         if (this.grid[y][x] === 1) {
           Draw.rect(
             camera.toScreenX(x),

@@ -14,10 +14,12 @@ export class Camera2D {
   }
 
   toScreenX(wx) {
-    return (wx - this.x) * this.scale + this.halfW;
+    const x = (wx - this.x) * this.scale + this.halfW;
+    return Math.round(x);
   }
 
   toScreenY(wy) {
-    return (wy - this.y) * this.scale + this.halfH;
+    const y = (wy - this.y) * this.scale + this.halfH;
+    return Math.round(y);
   }
 }
