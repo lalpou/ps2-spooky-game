@@ -157,7 +157,8 @@ function main_loop() {
       world.update(dt, controllerOne, controllerTwo);
       world.render();
       gui.render();
-      if (world.hasReachedExit()) gamestate.setState(5);
+      if (world.isPlayerDead()) gamestate.setState(2);
+      else if (world.hasReachedExit()) gamestate.setState(5);
       break;
     case 2:
       gameOverMenu.update(controllerOne.pad);

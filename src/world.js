@@ -125,6 +125,22 @@ export class World {
     const { player, monster } = this;
     this.handleInput(dt, playerController, player);
     this.handleInput(dt, monsterController, monster);
+    if (this.isMonsterHittingPlayer()) this.player.health -= 1;
+  }
+
+  /** @returns {boolean} true while the monster's hitbox overlaps the player's */
+  isPlayerDead() {
+    return this.player.health === 0;
+  }
+
+  isMonsterHittingPlayer() {
+    const { player, monster } = this;
+    const a = player.getHitbox();
+    const b = monster.getHitbox();
+    return (
+      Math.abs(player.x - monster.x) < (a.w + b.w) / 2 &&
+      Math.abs(player.y - monster.y) < (a.h + b.h) / 2
+    );
   }
 
   /** @returns {boolean} true once the player has walked out through the maze opening */

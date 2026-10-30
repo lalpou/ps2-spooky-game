@@ -6,6 +6,7 @@ const MAX_PUSH_OUT_ITERATIONS = 4;
 const WALL_FACE_HEIGHT = 1;
 const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
 const MIN_MONSTER_START_DISTANCE = 20;
+const MAX_MONSTER_START_DISTANCE = Infinity;
 
 const WALL_TILE_SIZE = 128;
 const wallTile = new Image("assets/wall_tile.png");
@@ -100,7 +101,9 @@ export class Maze {
     const candidates = [];
     for (let y = 1; y < this.height; y += 2) {
       for (let x = 1; x < this.width; x += 2) {
-        if (dist[y][x] >= MIN_MONSTER_START_DISTANCE) candidates.push({ x, y });
+        const d = dist[y][x];
+        if (d >= MIN_MONSTER_START_DISTANCE && d <= MAX_MONSTER_START_DISTANCE)
+          candidates.push({ x, y });
       }
     }
     if (candidates.length === 0) return this.farthestFrom(this.start);
