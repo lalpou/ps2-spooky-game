@@ -48,23 +48,26 @@ menuEnemy.setPos({
 });
 
 // Title above a Retry/Quit menu, centered as one block.
-const gameOverMenu = new Menu(0, 0, 10);
-gameOverMenu.addOption("Retry", () => {
-  gamestate.setState(1);
-});
-gameOverMenu.addOption("Save & Quit", () => {
-  gamestate.setState(3);
-});
+function buildEndScreen(title, color) {
+  const menu = new Menu(0, 0, 10);
+  menu.addOption("Retry", () => {
+    gamestate.setState(1);
+  });
+  menu.addOption("Save & Quit", () => {
+    gamestate.setState(3);
+  });
 
-const gameOver = new Composition(0, 0, Composition.VERTICAL, 30);
-gameOver.addItems(
-  new Label("GAME OVER", { scale: 2, color: Color.new(255, 0, 0, 128) }),
-  gameOverMenu,
-);
-gameOver.setPos({
-  x: (canvas.width - gameOver.size.width) / 2,
-  y: (canvas.height - gameOver.size.height) / 2,
-});
+  const screen = new Composition(0, 0, Composition.VERTICAL, 30);
+  screen.addItems(new Label(title, { scale: 2, color }), menu);
+  screen.setPos({
+    x: (canvas.width - screen.size.width) / 2,
+    y: (canvas.height - screen.size.height) / 2,
+  });
+  return { menu, screen };
+}
+
+const monsterWins = buildEndScreen("MONSTER WINS", Color.new(255, 0, 0, 128));
+const playerWins = buildEndScreen("PLAYER WINS", Color.new(0, 255, 0, 128));
 
 const letters = new Grid(0, 0, 7);
 for (let code = 65; code <= 90; code++) {
@@ -186,8 +189,8 @@ function main_loop() {
       else if (world.hasReachedExit()) gamestate.setState(5);
       break;
     case 2:
-      gameOverMenu.update(controllerOne.pad);
-      gameOver.render();
+      monsterWins.menu.update(controllerOne.pad);
+      monsterWins.screen.render();
       break;
     case 3: {
       const pad = controllerOne.pad;
@@ -209,7 +212,8 @@ function main_loop() {
       scoreboard.render();
       break;
     case 5:
-      //win
+      playerWins.menu.update(controllerOne.pad);
+      playerWins.screen.render();
       break;
   }
 

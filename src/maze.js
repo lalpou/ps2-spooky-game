@@ -5,8 +5,9 @@ const MAX_SUBSTEPS = 200;
 const MAX_PUSH_OUT_ITERATIONS = 4;
 const WALL_FACE_HEIGHT = 1;
 const SOUTH_WALL_FACE_HEIGHT = WALL_FACE_HEIGHT / 2;
-const MIN_MONSTER_START_DISTANCE = 20;
-const MAX_MONSTER_START_DISTANCE = Infinity;
+const MIN_MONSTER_START_DISTANCE = 2;
+const MAX_MONSTER_START_DISTANCE = 2;
+const SPAWN_NEXT_TO_EXIT = true;
 
 const WALL_TILE_SIZE = 128;
 const wallTile = new Image("assets/wall_tile.png");
@@ -54,12 +55,13 @@ export class Maze {
     this.grid = this.generate();
     /** @type {{x: number, y: number}} */
     this.start = this.pickStart();
-    /** @type {{x: number, y: number}} random open cell at least MIN_MONSTER_START_DISTANCE steps from start */
-    this.monsterStart = this.pickMonsterStart();
     /** @type {{x: number, y: number}} open cell next to the border, farthest from start */
     this.exit = this.farthestFrom(this.start, (x, y) =>
       this.touchesBorder(x, y),
     );
+    if (SPAWN_NEXT_TO_EXIT) this.start = this.pickStartNextToExit();
+    /** @type {{x: number, y: number}} random open cell at least MIN_MONSTER_START_DISTANCE steps from start */
+    this.monsterStart = this.pickMonsterStart();
     /** @type {{x: number, y: number}} border cell opened so the player can walk out */
     this.opening = this.openExit();
     this.rects = this.buildWallRects();
@@ -93,6 +95,17 @@ export class Maze {
       x: 1 + 2 * Math.floor(Math.random() * cellsX),
       y: 1 + 2 * Math.floor(Math.random() * cellsY),
     };
+  }
+
+  /** @returns {{x: number, y: number}} the cell one step from the exit along the maze path */
+  pickStartNextToExit() {
+    const dist = this.distancesFrom(this.exit);
+    for (let y = 1; y < this.height; y += 2) {
+      for (let x = 1; x < this.width; x += 2) {
+        if (dist[y][x] === 2) return { x, y };
+      }
+    }
+    return this.start;
   }
 
   /** @returns {{x: number, y: number}} falls back to the farthest cell if the maze is too small */

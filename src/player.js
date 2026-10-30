@@ -9,10 +9,10 @@ const playerSprites = {
 };
 
 const playerHitboxes = {
-  east: { w: 0.3, h: 0.4 },
-  north: { w: 0.3, h: 0.4 },
-  south: { w: 0.3, h: 0.4 },
-  west: { w: 0.3, h: 0.4 },
+  east: { w: 0.3, h: 0.3 },
+  north: { w: 0.3, h: 0.3 },
+  south: { w: 0.3, h: 0.3 },
+  west: { w: 0.3, h: 0.3 },
 };
 
 export class Player extends Character {
