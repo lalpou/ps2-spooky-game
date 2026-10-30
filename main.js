@@ -8,11 +8,20 @@ const canvas = Screen.getMode();
 
 Screen.setVSync(true);
 Screen.setParam(Screen.DEPTH_TEST_ENABLE, false);
+Sound.setVolume(80);
 
-const gamestate = new GameState(1);
+const gamestate = new GameState(0);
 const world = new World();
 let lastState = null;
 const controller = new Controller(0, 0.1);
+let music = null;
+
+function playMusic(path) {
+  if (music) music.free();
+  music = Sound.Stream(path);
+  music.loop = true;
+  music.play();
+}
 
 const margin = 20;
 
@@ -48,11 +57,16 @@ function main_loop() {
   lastState = state;
   switch (state) {
     case 0:
+      if (gameStateChanged) playMusic("assets/halloween-start-music.wav");
+      //menu
       menu.update(controller.pad);
       menu.render();
       break;
     case 1:
-      if (gameStateChanged) world.reset();
+      if (gameStateChanged) {
+        playMusic("assets/halloween-maze-song.wav");
+        world.reset();
+      }
       world.update(dt, controller);
       world.render();
       gui.render();
