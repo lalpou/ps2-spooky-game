@@ -3,6 +3,7 @@ import { GameState } from "./src/gamestate.js";
 import { World } from "./src/world.js";
 import { Menu } from "./src/ui/menu.js";
 import { Gui } from "./src/ui/gui.js";
+import { Picture } from "./src/ui/picture.js";
 
 const canvas = Screen.getMode();
 
@@ -34,6 +35,12 @@ menu.setPos({
   y: canvas.height - menu.size.height - margin,
 });
 
+const menuEnemy = new Picture("assets/enemy-south.png", 10, Picture.CENTER);
+menuEnemy.setPos({
+  x: canvas.width / 2 + 100,
+  y: canvas.height / 2 + 100,
+});
+
 const gui = new Gui(margin, margin);
 gui.spread(canvas.width - margin * 2);
 gui.addField("score", (score) => `Score: ${score}`, 0);
@@ -59,6 +66,7 @@ function main_loop() {
     case 0:
       if (gameStateChanged) playMusic("assets/halloween-start-music.wav");
       //menu
+      menuEnemy.render();
       menu.update(controller.pad);
       menu.render();
       break;
