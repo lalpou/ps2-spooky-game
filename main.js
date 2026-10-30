@@ -4,6 +4,8 @@ import { World } from "./src/world.js";
 import { Menu } from "./src/ui/menu.js";
 import { Gui } from "./src/ui/gui.js";
 import { Picture } from "./src/ui/picture.js";
+import { Label } from "./src/ui/label.js";
+import { Composition } from "./src/ui/composition.js";
 
 const canvas = Screen.getMode();
 
@@ -11,7 +13,7 @@ Screen.setVSync(true);
 Screen.setParam(Screen.DEPTH_TEST_ENABLE, false);
 Sound.setVolume(80);
 
-const gamestate = new GameState(0);
+const gamestate = new GameState(2);
 const world = new World();
 let lastState = null;
 const controller = new Controller(0, 0.1);
@@ -39,6 +41,25 @@ const menuEnemy = new Picture("assets/enemy-south.png", 10, Picture.CENTER);
 menuEnemy.setPos({
   x: canvas.width / 2 + 100,
   y: canvas.height / 2 + 100,
+});
+
+// Title above a Retry/Quit menu, centered as one block.
+const gameOverMenu = new Menu(0, 0, 10);
+gameOverMenu.addOption("Retry", () => {
+  gamestate.setState(1);
+});
+gameOverMenu.addOption("Save & Quit", () => {
+  gamestate.setState(3);
+});
+
+const gameOver = new Composition(0, 0, Composition.VERTICAL, 30);
+gameOver.addItems(
+  new Label("GAME OVER", { scale: 2, color: Color.new(255, 0, 0, 128) }),
+  gameOverMenu,
+);
+gameOver.setPos({
+  x: (canvas.width - gameOver.size.width) / 2,
+  y: (canvas.height - gameOver.size.height) / 2,
 });
 
 const gui = new Gui(margin, margin);
@@ -80,7 +101,14 @@ function main_loop() {
       gui.render();
       break;
     case 2:
-      //game over
+      gameOverMenu.update(controller.pad);
+      gameOver.render();
+      break;
+    case 3:
+      //enter name
+      break;
+    case 4:
+      //scoreboard
       break;
   }
 
