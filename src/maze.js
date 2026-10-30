@@ -141,7 +141,13 @@ export class Maze {
 
   /** @returns {boolean} true for an open grid cell inside the maze */
   isOpen(gx, gy) {
-    return gx >= 0 && gy >= 0 && gx < this.width && gy < this.height && this.grid[gy][gx] === 0;
+    return (
+      gx >= 0 &&
+      gy >= 0 &&
+      gx < this.width &&
+      gy < this.height &&
+      this.grid[gy][gx] === 0
+    );
   }
 
   /**
@@ -150,7 +156,8 @@ export class Maze {
    * @returns {boolean} true if a wall was removed
    */
   breakWall(gx, gy) {
-    const onBorder = gx <= 0 || gy <= 0 || gx >= this.width - 1 || gy >= this.height - 1;
+    const onBorder =
+      gx <= 0 || gy <= 0 || gx >= this.width - 1 || gy >= this.height - 1;
     if (onBorder || this.grid[gy][gx] !== 1) return false;
     this.grid[gy][gx] = 0;
     // Collision reads the prebuilt rects (render reads the grid), and neighbours' connectors change too.
@@ -418,10 +425,11 @@ export class Maze {
       .sort((a, b) => a.bottom - b.bottom);
     let next = 0;
     const h = WALL_THICKNESS / 2;
-    const cullingOffset = 90;
+    const cullingOffsetY = 150;
+    const cullingOffsetX = 80;
 
-    const spanX = (camera.halfW + cullingOffset) / camera.scale;
-    const spanY = (camera.halfW + cullingOffset) / camera.scale;
+    const spanX = (camera.halfW + cullingOffsetX) / camera.scale;
+    const spanY = (camera.halfW + cullingOffsetY) / camera.scale;
     const minX = Math.max(0, Math.floor(camera.x - spanX));
     const maxX = Math.min(this.width - 1, Math.ceil(camera.x + spanX));
     const minY = Math.max(0, Math.floor(camera.y - spanY));

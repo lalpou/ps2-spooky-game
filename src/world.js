@@ -42,9 +42,9 @@ const createFloor = ({ scale, viewport }) => {
         v1: 0,
         u2: FLOOR_TEXTURE_SIZE,
         v2: FLOOR_TEXTURE_SIZE,
-        r: 255,
-        g: 255,
-        b: 255,
+        r: 128,
+        g: 128,
+        b: 128,
         a: OPAQUE_ALPHA,
       });
     }
